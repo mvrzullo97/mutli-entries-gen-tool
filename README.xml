@@ -1,0 +1,16 @@
+gen_multi_entries.sh è uno script bash pensato per generare automaticamente una white list in TEF (sia di tipo Full che Incremental) contenente multiple entries. 
+
+I parametri da dare in pasto allo script sono:
+
+	-n -> numero di entries da generare (ognuna delle quali conterrà una coppia Pan/Targa)
+	-t -> specifica la tipologia di White List da generare (WI = Incremental, WF = Full)
+	-s -> codice del service provider, al momento quelli utilizzabili sono: 151, 2321, 3000, 7 e 49
+	-a -> codice APDUIdentifier
+	-u -> codice ADUIdentifier
+	-e -> codice di exceptionListVersion
+	-r -> numero progressivo del filename
+	
+Ex. bash gen_multi_entries_wl.sh -n 100 -t WI -s 151 -a 8170 -u 84 -e 8706
+
+Lanicato il comando, lo script crea, se non esiste, la cartella di  destinazione OUT_DIR al cui interno verrà inserita la white list finale. Se durante il run si incontreranno degli errori (di qualsiasi natura) lo script li mostrerà in console ed abortirà il processo di esecuzione.
+
