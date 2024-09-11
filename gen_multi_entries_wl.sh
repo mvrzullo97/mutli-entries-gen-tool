@@ -4,38 +4,66 @@ start=`date +%s`
 # usage menu
 echo
 echo "---------------------- Usage ----------------------"
-echo -e "\n   bash $0\n\n    -n < number of entries > \n    -t < list type > (WI or WL) \n    -s < service provider code > (ex. 151) \n    -a < APDUIdentifier code > \n    -u < ADUIdentifer code > \n    -e < exceptionListVersion code > \n    -d < discount (opt.) > \n    -p < progressive WL filename > \n"
+echo -e "\n   bash $0\n\n    -ne < Number of entries > \n    -sp < Service Provider code > \n    -ap < APDU code > \n    -tc < Type of Contract > \n    -cv < Context version > \n    -ad < DIDI ADU code (opt.) > \n    -ed < DIDI exceptionListVersion (opt.) > \n    -ds < Discount ID (opt.) > \n    -pd < DIDI progressive filename (opt.) > \n    -wt < WLWL type > (WI or WL) \n    -aw < WLWL ADU code > \n    -ew < WLWL exceptionListVersion > \n    -pw < WLWL progressive filename > \n"
 
-# TO DO trovaremodo per cat doppio file 
-# idea, parallelamente creare all'occorrenza sia DIDI che WIWI per tef
+counter_args=0
 
-
-while getopts n:t:s:a:u:e:d:p: flag
-do
-    case "${flag}" in
-		n) n=${OPTARG};;
-        t) LIST_TYPE=${OPTARG};;
-        s) S_PROVIDER=${OPTARG};;
-        a) C_APDU=${OPTARG};;
-        u) C_ADU_IDE=${OPTARG};;
-        e) C_EXC_VRS=${OPTARG};;
-        d) DISCOUNT=${OPTARG};;
-        p) fn_PRG_WL=${OPTARG};;
-		\?) echo -e "\n Argument error! \n"; exit 0 ;;
-	esac
+# parsing degli OPTARGS
+while [[ "$#" -gt 0 ]] ; do
+    case $1 in
+        -ne) n="$2"
+			((counter_args++))
+			 	shift 2;;
+		-wt) LIST_TYPE="$2"
+			((counter_args++))
+			 	shift 2;;
+        -sp) S_PROVIDER="$2"
+			((counter_args++))
+			 	shift 2;;
+		-ap) C_APDU="$2"
+			((counter_args++))
+				shift 2;;
+		-tc) CONTRACT_TYPE="$2"
+			((counter_args++))
+				shift 2;;
+		-cv) CONTEXT_VERSION="$2"
+			((counter_args++))
+				shift 2;;
+		-ds) DISCOUNT="$2"
+			((counter_args++))
+			 	shift 2;;
+		-ad) C_ADU_IDE_DI="$2"
+			((counter_args++))
+				shift 2;;
+		-ed) C_EXC_VRS_DI="$2"
+			((counter_args++))
+			 	shift 2;;
+		-pd) fn_PRG_DI="$2"
+			((counter_args++))
+			 	shift 2;;
+		-aw) C_ADU_IDE_WL="$2"
+			((counter_args++))
+				shift 2;;
+		-ew) C_EXC_VRS_WL="$2"
+			((counter_args++))
+			 	shift 2;;
+		-pw) fn_PRG_WL="$2"
+			((counter_args++))
+			 	shift 2;;
+        *)  echo -e "Error: Invalid option $1\n"
+			exit 0
+    esac
 done
 
 echo -e "--------------------------------------------------- \n"
 
-# params check
-if [ $# != 14 ] && [ $# != 16 ] ; then
-    echo "Argument error: please digit right command."
+if [ $counter_args != 9 ] && [ $counter_args != 13 ] ; then
+	echo "Argument error: please digit right command."
 	echo
 	exit 0
 fi
 
-OUT_DIR="OUT_DIR_WL"
-# create OUT_DIR if not exist
+OUT_DIR="OUT_DIR"
 if ! [ -d $OUT_DIR ] ; then
 	mkdir $OUT_DIR
 	path_OUT_dir=$(realpath $OUT_DIR)
@@ -47,8 +75,6 @@ fi
 
 
 tmp_filename_WL="tmp_filename_white_list.xml"
-tmp_filename_DI="tmp_filename_discount_incremental.xml"
-
 min_pan=1000000000000000000
 max_pan=9999999999999999999
 pad_f='F'
@@ -61,20 +87,15 @@ keys=( {A..Z} )
 values=('11000' '10011' '01110' '10010' '10000' '10110' '01011' '00101' '01100' '11010' '11110' '01001' '00111' # baudot encoding
         '00110' '00011' '01101' '11101' '01010' '10100' '00001' '11100' '01111' '11001' '10111' '10101' '10001') 
 
-# input validation
 if [[ $LIST_TYPE != 'WI' ]] && [[ $LIST_TYPE != 'WF' ]] ; then
-    echo -e "Param error: please digit a valid type of white list (WI or WF) \n"
+    echo -e "Param error: please digit a valid type of White List (WI or WF) \n"
     exit 0
 
 elif ! [[ ${providers_code[@]} =~ $S_PROVIDER ]] ; then
-    echo -e "Param error: service provider's code '$S_PROVIDER' doesn't exist. \n"
-    exit 0
-elif [ $T_CHARGER != '6' ] ; then 
-    echo -e "Param error: toll charger must be 6 \n"
+    echo -e "Param error: Service Provider's code '$S_PROVIDER' doesn't exist. \n"
     exit 0
 fi
 
-# functions
 function generate_PAN
 {   
     PAN=$(shuf -i $min_pan-$max_pan -n 1)$pad_f
@@ -143,6 +164,7 @@ function generate_BAUDOT
 
 if ! [ -z "${DISCOUNT}" ] ; then
     BOOL_discount=true
+	tmp_filename_DI="tmp_filename_discount_incremental.xml"
 fi
 
 declare -A hash_PVD_NAZ
@@ -163,7 +185,6 @@ NAZ_S_PROVIDER=$(get_naz_from_pvd $S_PROVIDER)
 BAUDOT_CODE=$(generate_BAUDOT $NAZ_S_PROVIDER)
 LIST_TYPE=$(extract_WL_type $LIST_TYPE)
 
-# generate discount incremental file if discount is not null
 if [ $BOOL_discount ] ; then
 cat << EOF > "$path_OUT_dir/$tmp_filename_DI"
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -189,18 +210,15 @@ cat << EOF > "$path_OUT_dir/$tmp_filename_DI"
 		<adus>
 			<exceptionListAdus>
 				<ExceptionListAdu>
-					<aduIdentifier>${C_ADU_IDE}</aduIdentifier>
-					<exceptionListVersion>${C_EXC_VRS}</exceptionListVersion>
+					<aduIdentifier>${C_ADU_IDE_DI}</aduIdentifier>
+					<exceptionListVersion>${C_EXC_VRS_DI}</exceptionListVersion>
 					<exceptionListType>12</exceptionListType>
 					<exceptionValidityStart>20230203085452Z</exceptionValidityStart>
 					<exceptionListEntries>
 EOF
 ((C_APDU++))
-((C_ADU_IDE++))
-((C_EXC_VRS++))
 fi
 
-# generate white list file
 cat << EOF > "$path_OUT_dir/$tmp_filename_WL" 
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <infoExchange>
@@ -225,8 +243,8 @@ cat << EOF > "$path_OUT_dir/$tmp_filename_WL"
 		<adus>
 			<exceptionListAdus>
 				<ExceptionListAdu>
-					<aduIdentifier>${C_ADU_IDE}</aduIdentifier>
-					<exceptionListVersion>${C_EXC_VRS}</exceptionListVersion>
+					<aduIdentifier>${C_ADU_IDE_WL}</aduIdentifier>
+					<exceptionListVersion>${C_EXC_VRS_WL}</exceptionListVersion>
 					<exceptionListType>12</exceptionListType>
 					<exceptionValidityStart>20230203085452Z</exceptionValidityStart>
 					<exceptionListEntries>
@@ -237,7 +255,7 @@ do
     PAN=$(generate_PAN)
     PLATE=$(generate_PLATE_NUMBER)
     HEX_PLATE=$(convert_PLATE_to_HEX $PLATE)
-    cat << EOF >> "$path_OUT_dir/$tmp_filename_WL"
+    cat << EOF | tee -a "$path_OUT_dir/$tmp_filename_DI" "$path_OUT_dir/$tmp_filename_WL" > /dev/null 2>&1
                         <ExceptionListEntry>
 							<userId>
 								<pan>${PAN}</pan>
@@ -256,24 +274,24 @@ do
 									<countryCode>${BAUDOT_CODE}</countryCode>
 									<providerIdentifier>${S_PROVIDER}</providerIdentifier>
 								</contractProvider>
-								<typeOfContract>001D</typeOfContract>
-								<contextVersion>9</contextVersion>
+								<typeOfContract>${CONTRACT_TYPE}</typeOfContract>
+								<contextVersion>${CONTEXT_VERSION}</contextVersion>
 							</efcContextMark>
 EOF
 if [ $BOOL_discount ] ; then
-cat << EOF >> "$path_OUT_dir/$tmp_filename_WL"
+cat << EOF | tee -a "$path_OUT_dir/$tmp_filename_DI" "$path_OUT_dir/$tmp_filename_WL" >> /dev/null
                             <applicableDiscounts>
                                 <discountId>${DISCOUNT}</discountId>
                             </applicableDiscounts>
 EOF
 fi
 
-cat << EOF >> "$path_OUT_dir/$tmp_filename_WL"
+cat << EOF | tee -a "$path_OUT_dir/$tmp_filename_DI" "$path_OUT_dir/$tmp_filename_WL" > /dev/null 2>&1
 						</ExceptionListEntry>
 EOF
 done
 
-cat << EOF >> "$path_OUT_dir/$tmp_filename_WL"             
+cat << EOF | tee -a "$path_OUT_dir/$tmp_filename_DI" "$path_OUT_dir/$tmp_filename_WL" > /dev/null 2>&1       
 					</exceptionListEntries>
 				</ExceptionListAdu>
 			</exceptionListAdus>
@@ -281,15 +299,21 @@ cat << EOF >> "$path_OUT_dir/$tmp_filename_WL"
 	</infoExchangeContent>
 </infoExchange>
 EOF
-exit 0
 
-# pattern filename WL:F<naz_SP>00<cod_SP(5 chars)>T<naz_TC>00<cod_TC (5 chars)>.SET.<list_TYPE>.000<PRG (10 chars)>.XML
 const_F="F"
 naz_TC="IT"
 const_T="T"
 const_SET="SET"
 fn_S_PROVIDER=$(extract_offset_pad $S_PROVIDER 5)
 fn_T_CHARGER=$(extract_offset_pad $T_CHARGER 5)
+
+if [ $BOOL_discount ] ; then
+	const_DIDI="DIDI"
+	fn_PRG_DI=$(extract_offset_pad $fn_PRG_DI 10)
+	filename_DI="$const_F$NAZ_S_PROVIDER$fn_S_PROVIDER$const_T$naz_TC$fn_T_CHARGER.$const_SET.$const_DIDI.$fn_PRG_DI.XML"
+	mv "$path_OUT_dir/$tmp_filename_DI" "$path_OUT_dir/$filename_DI"
+fi
+
 fn_PRG_WL=$(extract_offset_pad $fn_PRG_WL 10)
 filename_WL="$const_F$NAZ_S_PROVIDER$fn_S_PROVIDER$const_T$naz_TC$fn_T_CHARGER.$const_SET.$LIST_TYPE.$fn_PRG_WL.XML"
 mv "$path_OUT_dir/$tmp_filename_WL" "$path_OUT_dir/$filename_WL"
@@ -298,4 +322,4 @@ echo -e "--------------------------------------------------- \n"
 
 end=`date +%s`
 echo -e "...execution time: `expr $end - $start` seconds.\n"
-echo -e "...file presents at path: '$path_OUT_dir' \n"
+echo -e "...files present at path: '$path_OUT_dir' \n"
