@@ -1,16 +1,33 @@
-gen_multi_entries.sh è uno script bash pensato per generare automaticamente una white list in TEF (sia di tipo Full che Incremental) contenente multiple entries. 
+gen_multi_entries.sh è uno script bash pensato per automatizzare in toto la creazione di una Discount Incremental e relativa White List, o all'occorrenza solo la White List.
 
 I parametri da dare in pasto allo script sono:
 
-	-n -> numero di entries da generare (ognuna delle quali conterrà una coppia Pan/Targa)
-	-t -> specifica la tipologia di White List da generare (WI = Incremental, WF = Full)
-	-s -> codice del service provider, al momento quelli utilizzabili sono: 151, 2321, 3000, 7 e 49
-	-a -> codice APDUIdentifier
-	-u -> codice ADUIdentifier
-	-e -> codice di exceptionListVersion
-	-r -> numero progressivo del filename
+	-ne -> numero di entries da generare (ognuna delle quali conterrà una coppia Pan-Targa (espressa già in formato Hex)
+    -sp -> codice del Service Provider (al momento la lista contiene: 151, 2321, 3000, 7 e 49, ma si può estenderla modificando direttamente la struttura dati che contiene il codice Service Provider e la sua Nazionalità)
+    -ap -> codice apduIdentifier
+	-tc -> Tipologia di contratto
+	-cv -> Context version
+    -ad -> codice aduIdentifier relativo alla Discount Incremental (param opz.)
+    -ed -> exceptionListVersion relativo alla Discount Incremental (param opz.)     
+    -ds -> codice identificativo dello sconto (param opz.)
+    -pd -> numero progressivo della Discount Incremental (param opz.)       
+    -wt -> tipologia di White List da voler generare (WI o WF)
+    -aw -> codice aduIdentifier relativo alla White List
+    -ew -> exceptionListVersion relativo alla White List
+    -pw -> numero progressivo della White List
 	
-Ex. bash gen_multi_entries_wl.sh -n 100 -t WI -s 151 -a 8170 -u 84 -e 8706
 
-Lanicato il comando, lo script crea, se non esiste, la cartella di  destinazione OUT_DIR al cui interno verrà inserita la white list finale. Se durante il run si incontreranno degli errori (di qualsiasi natura) lo script li mostrerà in console ed abortirà il processo di esecuzione.
+Comando per generare solo la White List: 
+bash gen_multi_entries_wl.sh -ne 100 -sp 7 -ap 10 -tc 0101 -cv 1 -wt WI -aw 12 -ew 90 -pw 89
 
+Comando per generare una Discount Incremental con relativa White List
+bash gen_multi_entries_wl.sh -ne 100 -sp 7 -ap 10 -tc 0101 -cv 1 -ad 50 -ed 56 -ds 4 -pd 34 -wt WI -aw 12 -ew 90 -pw 89
+
+Una volta lanciato il comando, lo script crea, se non esiste, la cartella di destinazione 'OUT_DIR' al cui interno verranno inseriti i file generati al termine del run.
+
+number of entries - exec time
+
+1k-30sec
+5k-120sec
+10k-300sec
+20k-611sec
