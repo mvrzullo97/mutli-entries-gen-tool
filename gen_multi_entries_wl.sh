@@ -4,7 +4,13 @@ start=`date +%s`
 # usage menu
 echo
 echo "---------------------- Usage ----------------------"
-echo -e "\n   bash $0\n\n    -ne < Number of entries > \n    -sp < Service Provider code > \n    -ap < APDU code > \n    -tc < Type of Contract > \n    -cv < Context version > \n    -ad < DIDI ADU code (opt.) > \n    -ed < DIDI exceptionListVersion (opt.) > \n    -ds < Discount ID (opt.) > \n    -pd < DIDI progressive filename (opt.) > \n    -wt < WLWL type > (WI or WL) \n    -aw < WLWL ADU code > \n    -ew < WLWL exceptionListVersion > \n    -pw < WLWL progressive filename > \n"
+echo -e "\n   bash $0\n\n    -ne < Number of entries > \n    -sp < Service Provider code > \n    -ap < APDU code > \n    -tc < Type of Contract > \n    -cv < Context version > \n    -ad < DIDI ADU code (opt.) > \n    -ed < DIDI exceptionListVersion (opt.) > \n    -ds < Discount ID (opt.) > \n    -pd < DIDI progressive filename (opt.) > \n    -wt < WLWL type > (WI or WL) \n    -aw < WLWL ADU code > \n    -ew < WLWL exceptionListVersion > \n    -pw < WLWL progressive filename > \n    -sv < save Pan-Targa (t/f opt.) >  \n"
+
+
+# to do 
+#1) salvare le n coppie in un file di testo se argomento = TRUE
+#2) generare una WL di cambio targa
+
 
 counter_args=0
 
@@ -50,6 +56,9 @@ while [[ "$#" -gt 0 ]] ; do
 		-pw) fn_PRG_WL="$2"
 			((counter_args++))
 			 	shift 2;;
+		-sv) save_txt="$2"
+			((counter_args++))
+			 	shift 2;;
         *)  echo -e "Error: Invalid option $1\n"
 			exit 0
     esac
@@ -57,7 +66,7 @@ done
 
 echo -e "--------------------------------------------------- \n"
 
-if [ $counter_args != 9 ] && [ $counter_args != 13 ] ; then
+if [ $counter_args != 9 ] && [ $counter_args != 10 ] && [ $counter_args != 13 ] && [ $counter_args != 14 ] ; then
 	echo "Argument error: please digit right command."
 	echo
 	exit 0
@@ -71,6 +80,19 @@ if ! [ -d $OUT_DIR ] ; then
     chmod 0777 "$path_OUT_dir"
 else
 	path_OUT_dir=$(realpath $OUT_DIR)
+fi
+
+file_couple="Pan_Targa_couples.xml"
+
+if [ -f $file_couple ] ; then
+> $file_couple
+fi
+
+# save Pan-Targa into file .xml
+if [ $save_txt == 't' ] ; then
+	touch $file_couple
+	chmod 0777 $file_couple
+	echo -e "...create '$file_couple' at path: '$(realpath $file_couple)'\n"
 fi
 
 
@@ -255,6 +277,13 @@ do
     PAN=$(generate_PAN)
     PLATE=$(generate_PLATE_NUMBER)
     HEX_PLATE=$(convert_PLATE_to_HEX $PLATE)
+
+	if [ $save_txt == 't' ] ; then
+		cat << EOF >> "$(realpath $file_couple)"
+$i)$PAN-$HEX_PLATE-
+EOF
+	fi
+
     cat << EOF | tee -a "$path_OUT_dir/$tmp_filename_DI" "$path_OUT_dir/$tmp_filename_WL" > /dev/null 2>&1
                         <ExceptionListEntry>
 							<userId>
