@@ -90,7 +90,6 @@ if [ $save_txt == "t" ] && [[ $change_plate == "f" || -z "${change_plate}" ]] ; 
 	fi
 fi
 
-
 tmp_filename_WL="tmp_filename_white_list.xml"
 min_pan=1000000000000000000
 max_pan=9999999999999999999
@@ -189,7 +188,7 @@ function get_PAN_from_file
 	echo ${PAN}
 }
 
-function get_PLATE_from_file 
+function get_HEX_PLATE_from_file 
 {
 	i_tmp=$1
 	i=$i_tmp')'
@@ -289,11 +288,47 @@ cat << EOF > "$path_OUT_dir/$tmp_filename_WL"
 EOF
 for ((i=0; i<n; i++)) 
 do
-    echo -e "...generating entry: $(expr $i + 1)\n"
-    PAN=$(generate_PAN)
-    PLATE=$(generate_PLATE_NUMBER)
-    HEX_PLATE=$(convert_PLATE_to_HEX $PLATE)
-
+    
+	if ! [ -z "${change_plate}" ] ; then
+		if [ $change_plate == "t" ] ; then 
+			echo -e "...generating entry of change plate: $(expr $i + 1)\n"
+			PAN=$(get_PAN_from_file $i $file_couple)
+			HEX_PLATE=$(get_HEX_PLATE_from_file $i $file_couple)
+			cat << EOF | tee -a "$path_OUT_dir/$tmp_filename_DI" "$path_OUT_dir/$tmp_filename_WL" > /dev/null 2>&1
+							<ExceptionListEntry>
+								<userId>
+									<pan>${PAN}</pan>
+									<licencePlateNumber>
+										<countryCode>0110000001</countryCode>
+										<alphabetIndicator>000000</alphabetIndicator>
+										<licencePlateNumber>${HEX_PLATE}</licencePlateNumber>
+									</licencePlateNumber>
+								</userId>
+								<statusType>0</statusType>
+								<reasonCode>0</reasonCode>
+								<entryValidityStart>20230104140028Z</entryValidityStart>
+								<actionRequested>5</actionRequested>
+								<efcContextMark>
+									<contractProvider>
+										<countryCode>${BAUDOT_CODE}</countryCode>
+										<providerIdentifier>${S_PROVIDER}</providerIdentifier>
+									</contractProvider>
+									<typeOfContract>${CONTRACT_TYPE}</typeOfContract>
+									<contextVersion>${CONTEXT_VERSION}</contextVersion>
+								</efcContextMark>
+							</ExceptionListEntry>	
+EOF
+		fi
+# the new PLATE_NUMBER
+PLATE=$(generate_PLATE_NUMBER)
+HEX_PLATE=$(convert_PLATE_to_HEX $PLATE)
+	else
+		echo -e "...generating entry: $(expr $i + 1)\n"
+		PAN=$(generate_PAN)
+    	PLATE=$(generate_PLATE_NUMBER)
+    	HEX_PLATE=$(convert_PLATE_to_HEX $PLATE)
+	fi
+	
 	if [ $save_txt == 't' ] ; then
 		cat << EOF >> "$(realpath $file_couple)"
 $i)$PAN-$HEX_PLATE
