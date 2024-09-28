@@ -4,16 +4,9 @@ start=`date +%s`
 # usage menu
 echo
 echo "---------------------- Usage ----------------------"
-echo -e "\n   bash $0\n\n    -ne < Number of entries > \n    -sp < Service Provider code > \n    -ap < APDU code > \n    -tc < Type of Contract > \n    -cv < Context version > \n    -ad < DIDI ADU code (opt.) > \n    -ed < DIDI exceptionListVersion (opt.) > \n    -ds < Discount ID (opt.) > \n    -pd < DIDI progressive filename (opt.) > \n    -wt < WLWL type > (WI or WL) \n    -aw < WLWL ADU code > \n    -ew < WLWL exceptionListVersion > \n    -pw < WLWL progressive filename > \n    -sv < save Pan-Targa (t/f opt.) >  \n"
-
-
-# to do 
-#1) salvare le n coppie in un file di testo se argomento = TRUE
-#2) generare una WL di cambio targa
-
+echo -e "\n   bash $0\n\n    -ne < Number of entries > \n    -sp < Service Provider code > \n    -ap < APDU code > \n    -tc < Type of Contract > \n    -cv < Context version > \n    -ad < DIDI ADU code (opt.) > \n    -ed < DIDI exceptionListVersion (opt.) > \n    -ds < Discount ID (opt.) > \n    -pd < DIDI progressive filename (opt.) > \n    -wt < WLWL type > (WI or WL) \n    -aw < WLWL ADU code > \n    -ew < WLWL exceptionListVersion > \n    -pw < WLWL progressive filename > \n    -sv < save Pan-Targa (t/f opt.) > \n    -cp < change plate (t/f opt.) > \n"
 
 counter_args=0
-
 # parsing degli OPTARGS
 while [[ "$#" -gt 0 ]] ; do
     case $1 in
@@ -59,6 +52,9 @@ while [[ "$#" -gt 0 ]] ; do
 		-sv) save_txt="$2"
 			((counter_args++))
 			 	shift 2;;
+		-cp) change_plate="$2"
+			((counter_args++))
+			 	shift 2;;
         *)  echo -e "Error: Invalid option $1\n"
 			exit 0
     esac
@@ -66,7 +62,7 @@ done
 
 echo -e "--------------------------------------------------- \n"
 
-if [ $counter_args != 9 ] && [ $counter_args != 10 ] && [ $counter_args != 13 ] && [ $counter_args != 14 ] ; then
+if [[ $counter_args != 9 && $counter_args != 10 && $counter_args != 11 && $counter_args != 13 && $counter_args != 14 && $counter_args != 15 ]] ; then
 	echo "Argument error: please digit right command."
 	echo
 	exit 0
@@ -83,16 +79,15 @@ else
 fi
 
 file_couple="Pan_Targa_couples.xml"
-
-if [ -f $file_couple ] ; then
-> $file_couple
-fi
-
-# save Pan-Targa into file .xml
-if [ $save_txt == 't' ] ; then
-	touch $file_couple
-	chmod 0777 $file_couple
-	echo -e "...create '$file_couple' at path: '$(realpath $file_couple)'\n"
+if [ $save_txt == "t" ] && [[ $change_plate == "f" || -z "${change_plate}" ]] ; then
+	if [ -f $file_couple ] ; then
+		> $file_couple
+		echo -e "...clean the content of file '$file_couple' \n"
+	else 
+		touch $file_couple
+		chmod 0777 $file_couple
+		echo -e "...create '$file_couple' at path: '$(realpath $file_couple)'\n"
+	fi
 fi
 
 
@@ -109,7 +104,7 @@ keys=( {A..Z} )
 values=('11000' '10011' '01110' '10010' '10000' '10110' '01011' '00101' '01100' '11010' '11110' '01001' '00111' # baudot encoding
         '00110' '00011' '01101' '11101' '01010' '10100' '00001' '11100' '01111' '11001' '10111' '10101' '10001') 
 
-if [[ $LIST_TYPE != 'WI' ]] && [[ $LIST_TYPE != 'WF' ]] ; then
+if [[ $LIST_TYPE != 'WI' && $LIST_TYPE != 'WF' ]] ; then
     echo -e "Param error: please digit a valid type of White List (WI or WF) \n"
     exit 0
 
@@ -183,6 +178,27 @@ function generate_BAUDOT
     baudot_code=$first_baudot$second_baudot
     echo ${baudot_code}
 }
+
+function get_PAN_from_file 
+{
+	i_tmp=$1
+	i=$i_tmp')'
+	f=$2
+	grepped_string=$(grep $i $f | cut -d ')' -f 2)
+	PAN=$(echo ${grepped_string} | cut -d '-' -f 1)
+	echo ${PAN}
+}
+
+function get_PLATE_from_file 
+{
+	i_tmp=$1
+	i=$i_tmp')'
+	f=$2
+	grepped_string=$(grep $i $f | cut -d ')' -f 2)
+	PLATE=$(echo ${grepped_string} | cut -d '-' -f 2)
+	echo ${PLATE}
+}
+
 
 if ! [ -z "${DISCOUNT}" ] ; then
     BOOL_discount=true
@@ -280,7 +296,7 @@ do
 
 	if [ $save_txt == 't' ] ; then
 		cat << EOF >> "$(realpath $file_couple)"
-$i)$PAN-$HEX_PLATE-
+$i)$PAN-$HEX_PLATE
 EOF
 	fi
 
