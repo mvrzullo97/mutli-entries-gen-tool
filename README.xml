@@ -2,11 +2,11 @@ gen_multi_entries.sh è uno script bash pensato per automatizzare in toto la cre
 
 I parametri da dare in pasto allo script sono:
 
-	-ne -> numero di entries da generare (ognuna delle quali conterrà una coppia Pan-Targa (espressa già in formato Hex)
+    -ne -> numero di entries da generare (ognuna delle quali conterrà una coppia Pan-Targa (espressa già in formato Hex)
     -sp -> codice del Service Provider (al momento la lista contiene: 151, 2321, 3000, 7 e 49, ma si può estenderla modificando direttamente la struttura dati che contiene il codice Service Provider e la sua Nazionalità)
     -ap -> codice apduIdentifier
-	-tc -> Tipologia di contratto
-	-cv -> Context version
+    -tc -> Tipologia di contratto
+    -cv -> Context version
     -ad -> codice aduIdentifier relativo alla Discount Incremental (param opz.)
     -ed -> exceptionListVersion relativo alla Discount Incremental (param opz.)     
     -ds -> codice identificativo dello sconto (param opz.)
