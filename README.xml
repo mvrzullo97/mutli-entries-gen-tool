@@ -15,6 +15,8 @@ I parametri da dare in pasto allo script sono:
     -aw -> codice aduIdentifier relativo alla White List
     -ew -> exceptionListVersion relativo alla White List
     -pw -> numero progressivo della White List
+	-sv -> permette di salvare le coppie pan targa su file (param opz.)
+	-cp -> permette di generare le wl di cambio targa
 	
 
 Comando per generare solo la White List: 
@@ -23,11 +25,12 @@ bash gen_multi_entries_wl.sh -ne 100 -sp 7 -ap 10 -tc 0101 -cv 1 -wt WI -aw 12 -
 Comando per generare una Discount Incremental con relativa White List
 bash gen_multi_entries_wl.sh -ne 100 -sp 7 -ap 10 -tc 0101 -cv 1 -ad 50 -ed 56 -ds 4 -pd 34 -wt WI -aw 12 -ew 90 -pw 89
 
+Comando per generare una White List salvando su file le coppie Pan-Targa generate
+bash gen_multi_entries_wl.sh -ne 50 -sp 7 -ap 10 -tc 0101 -cv 1 -wt WI -aw 12 -ew 90 -pw 89 -sv t
+
+Comando per generare una White List di cambio targa estraendo dal file generato precedentemente le coppie Pan-Targa 'vecchie'
+bash gen_multi_entries_wl.sh -ne 50 -sp 7 -ap 10 -tc 0101 -cv 1 -wt WI -aw 12 -ew 90 -pw 89 -sv f -cp t
+
+
 Una volta lanciato il comando, lo script crea, se non esiste, la cartella di destinazione 'OUT_DIR' al cui interno verranno inseriti i file generati al termine del run.
 
-number of entries - exec time
-
-1k-30sec
-5k-120sec
-10k-300sec
-20k-611sec
