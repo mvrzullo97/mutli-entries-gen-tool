@@ -1,0 +1,35 @@
+gen_multi_entries.sh è uno script bash pensato per automatizzare in toto la creazione di una Discount Incremental e relativa White List, o all'occorrenza solo la White List.
+
+I parametri da dare in pasto allo script sono:
+
+	-ne -> numero di entries da generare (ognuna delle quali conterrà una coppia Pan-Targa (espressa già in formato Hex)
+    -sp -> codice del Service Provider (al momento la lista contiene: 151, 2321, 3000, 7 e 49, ma si può estenderla modificando direttamente la struttura dati che contiene il codice Service Provider e la sua Nazionalità)
+    -ap -> codice apduIdentifier
+	-tc -> Tipologia di contratto
+	-cv -> Context version
+    -ad -> codice aduIdentifier relativo alla Discount Incremental (param opz.)
+    -ed -> exceptionListVersion relativo alla Discount Incremental (param opz.)     
+    -ds -> codice identificativo dello sconto (param opz.)
+    -pd -> numero progressivo della Discount Incremental (param opz.)       
+    -wt -> tipologia di White List da voler generare (WI o WF)
+    -aw -> codice aduIdentifier relativo alla White List
+    -ew -> exceptionListVersion relativo alla White List
+    -pw -> numero progressivo della White List
+	-st -> comando per salvare le coppie Pan-Targa su file (utile se si vuole generare successivamente una wl di cambio targa)
+	-cp -> comando per generare una wl di cambio targa
+	
+
+Comando per generare solo la White List: 
+bash gen_multi_entries_wl.sh -ne 100 -sp 7 -ap 10 -tc 0101 -cv 1 -wt WI -aw 12 -ew 90 -pw 89
+
+Comando per generare una Discount Incremental con relativa White List
+bash gen_multi_entries_wl.sh -ne 100 -sp 7 -ap 10 -tc 0101 -cv 1 -ad 50 -ed 56 -ds 4 -pd 34 -wt WI -aw 12 -ew 90 -pw 89
+
+Comando per generare una white list salvando su file ('Pan_Targa_couples.xml')le coppie Pan-Targa
+bash gen_multi_entries_wl.sh -ne 50 -sp 7 -ap 10 -tc 0101 -cv 1 -wt WI -aw 12 -ew 90 -pw 89 -sv t
+
+Comando per generare una white list di cambio targa prendendo come coppie Pan-Targa 'vecchie' quelle contenute nel file 'Pan_Targa_couples.xml'
+bash gen_multi_entries_wl.sh -ne 50 -sp 7 -ap 10 -tc 0101 -cv 1 -wt WI -aw 12 -ew 90 -pw 89 -sv f -cp t
+
+Una volta lanciato il comando, lo script crea, se non esiste, la cartella di destinazione 'OUT_DIR' al cui interno verranno inseriti i file generati al termine del run.
+
