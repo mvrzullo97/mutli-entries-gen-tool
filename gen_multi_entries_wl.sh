@@ -79,14 +79,16 @@ else
 fi
 
 file_couple="Pan_Targa_couples.xml"
-if [ $save_txt == "t" ] && [[ $change_plate == "f" || -z "${change_plate}" ]] ; then
-	if [ -f $file_couple ] ; then
-		> $file_couple
-		echo -e "...clean the content of file '$file_couple' \n"
-	else 
-		touch $file_couple
-		chmod 0777 $file_couple
-		echo -e "...create '$file_couple' at path: '$(realpath $file_couple)'\n"
+if ! [ -z "${save_txt}" ] ; then 
+	if [ $save_txt == "t" ] && [[ $change_plate == "f" || -z "${change_plate}" ]] ; then
+		if [ -f $file_couple ] ; then
+			> $file_couple
+			echo -e "...clean the content of file '$file_couple' \n"
+		else 
+			touch $file_couple
+			chmod 0777 $file_couple
+			echo -e "...create '$file_couple' at path: '$(realpath $file_couple)'\n"
+		fi
 	fi
 fi
 
@@ -287,10 +289,8 @@ cat << EOF > "$path_OUT_dir/$tmp_filename_WL"
 					<exceptionListEntries>
 EOF
 for ((i=0; i<n; i++)) 
-do
-    
-	if ! [ -z "${change_plate}" ] ; then
-		if [ $change_plate == "t" ] ; then 
+do 
+	if ! [ -z "${change_plate}" ] && [ $change_plate == "t" ] ; then
 			echo -e "...generating entry of change plate: $(expr $i + 1)\n"
 			PAN=$(get_PAN_from_file $i $file_couple)
 			HEX_PLATE=$(get_HEX_PLATE_from_file $i $file_couple)
@@ -318,18 +318,18 @@ do
 								</efcContextMark>
 							</ExceptionListEntry>	
 EOF
-		fi
-# the new PLATE_NUMBER
-PLATE=$(generate_PLATE_NUMBER)
-HEX_PLATE=$(convert_PLATE_to_HEX $PLATE)
-	else
+			# the new PLATE_NUMBER
+			PLATE=$(generate_PLATE_NUMBER)
+			HEX_PLATE=$(convert_PLATE_to_HEX $PLATE)
+
+	elif [ -z "${change_plate}" ] || [ $change_plate == "f" ] ; then 
 		echo -e "...generating entry: $(expr $i + 1)\n"
 		PAN=$(generate_PAN)
     	PLATE=$(generate_PLATE_NUMBER)
     	HEX_PLATE=$(convert_PLATE_to_HEX $PLATE)
 	fi
-	
-	if [ $save_txt == 't' ] ; then
+		
+	if ! [ -z "${save_txt}" ] && [ $save_txt == 't' ] ; then
 		cat << EOF >> "$(realpath $file_couple)"
 $i)$PAN-$HEX_PLATE
 EOF
